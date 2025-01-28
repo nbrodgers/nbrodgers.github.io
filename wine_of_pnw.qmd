@@ -1,0 +1,123 @@
+**Author:** Nicole Rodgers
+
+**Abstract:** This is a technical blog post of **both** an HTML file *and* [.qmd file](src/wine_of_pnw.qmd) hosted on GitHub pages.
+
+**Step Up Code:**
+```{r}
+local({r <- getOption("repos")
+       r["CRAN"] <- "https://cran.r-project.org" 
+       options(repos=r)
+})
+
+#install.packages("tidyverse")
+#install.packages("moderndive")
+#install.packages("caret")
+#install.packages("dslabs")
+
+library(tidyverse)
+library(moderndive)
+library(caret)
+library(dslabs)
+
+wine <- readRDS(gzcon(url("https://github.com/cd-public/DSLM-505/raw/master/dat/wine.rds"))) %>%
+  filter(province=="Oregon" | province=="California" | province=="New York") %>% 
+  mutate(cherry=as.integer(str_detect(description,"[Cc]herry"))) %>% 
+  mutate(lprice=log(price)) %>% 
+  select(lprice, points, cherry, province)
+```
+
+**Explanation:** </br>
+Lines 1-3 set up the default CRAN installation </br>
+Lines 5-12 install and load the 'Tidyverse', 'ModernDive', 'Caret', and 'dslabs' packages for R </br>
+Line 13 creates the dataset, 'wine', by downloading the 'wine.rds' file from Github, decompressing it with gzcon(), then reading it with readRDS() </br>
+Line 14 filters the 'wine' dataset by limiting the data to those rows that have 'Oregon', 'California', or 'New York' in the 'province' column </br>
+Line 15 creates a boolean value for each row depending on whether or not the 'description' colum contains an instance of 'Cherry' or 'cherry', converts this boolean into an integer, then stores this integer in a column named 'cherry' </br>
+Line 16 calculates the natural log of price for each row and stores the values in a column named 'lprice' </br>
+Line 17 limits the wine dataset to the 'lprice', 'points', 'cherry', and 'province' columns
+
+# Multiple Regression
+
+## Linear Models
+
+```{r}
+m1 <- lm(lprice ~ points + cherry, data = wine)
+```
+
+**Explanation:**
+  This code creates an object, 'm1', which is a linear regression model for the 'wine' dataset with dependent variable 'lprice' and independent variables 'points' and 'cherry'.
+
+```{r}
+get_regression_points(m1) %>%
+  mutate(sq_residuals = residual^2) %>%
+  summarize(rmse = sqrt(mean(sq_residuals))) %>%
+  pluck('rmse')
+```
+
+  The RMSE is the square root of the average of the squares of the residuals (the differences between the predicted values and the actual values for each point). The lower the RMSE, the better. The RMSE for this model is 0.469
+
+
+## Interaction Models
+
+```{r}
+m2 <- lm(lprice ~ points * cherry, data = wine)
+```
+
+  This code creates an object, 'm2', which is a linear regression model for the 'wine' dataset with dependent variable 'lprice' and independent variables 'points' and 'cherry'. The * indicates an interaction between 'points' and 'cherry'.
+
+```{r}
+get_regression_points(m2) %>%
+  mutate(sq_residuals = residual^2) %>%
+  summarize(rmse = sqrt(mean(sq_residuals))) %>%
+  pluck('rmse')
+```
+  The RMSE for this model is also about 0.469
+
+
+### The Interaction Variable
+
+```{r}
+summary(m2)
+```
+  The coefficient (or slope) of the interaction model is 0.013, which is positive, but very small. Meaning, there is a slightly positive coorelation between 'lprice' and the interaction of "cherry and 'points'.
+
+## Applications
+
+```{r}
+or <- lm(lprice ~ points * cherry, data = filter(wine, province == "Oregon"))
+ca <- lm(lprice ~ points * cherry, data = filter(wine, province == "California"))
+ny <- lm(lprice ~ points * cherry, data = filter(wine, province == "New York"))
+
+summary(or) #-1.5
+summary(ca) #-1.07
+summary(ny) #1.58
+
+#New York?
+```
+
+  Lines 1-3 generate linear regression models for the 'wine' dataset with dependent variable 'lprice' and independent variables 'points' and 'cherry'. For each line, the 'wine' dataset is limited to rows with 'Oregon', 'California', or 'New York', respectively, in the 'province' column
+
+# Scenarios
+
+## On Accuracy
+
+Imagine a model to distinguish New York wines from those in California and Oregon. After a few days of work, you take some measurements and note: "I've achieved 91% accuracy on my model!" 
+
+Should you be impressed? Why or why not?
+
+```{r}
+ggplot(data = wine) +
+  geom_bar(aes(x = province))
+```
+
+  No. 91% accuracy is not enough. A model should be at least 95% accurate. Furthermore, there are much fewer New York wines in the dataset, so any comparisons would be inaccurate.
+
+## On Ethics
+
+Why is understanding this vignette important to use machine learning in an ethical manner?
+
+  Every stasticial analysis is at the mercy of sample size. You cannot accurately compare populations of vastly different sample sizes. The smaller population is more easily influenced by outliers.
+
+## Ignorance is no excuse
+Imagine you are working on a model to predict the likelihood that an individual loses their job as the result of the changing federal policy under new presidential administrations. You have a very large dataset with many hundreds of features, but you are worried that including indicators like age, income or gender might pose some ethical problems. When you discuss these concerns with your boss, she tells you to simply drop those features from the model. Does this solve the ethical issue? Why or why not?
+
+  No. Demographics such as these play an important role in employment and should definitely be included in the model. I would argue that the model wouldn't be useful at all if it didn't include these features as the data would be too homogenized to account for real-world behavior.
