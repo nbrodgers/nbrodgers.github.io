@@ -8,11 +8,6 @@ format:
     embed-resources: true
 ---
 
-**Author:**
-
-Nicole Rodgers
-
-
 **Abstract:**
 
 This is a technical blog post of **both** an HTML file *and* [.qmd file](src/wine_features.qmd) hosted on GitHub pages.
