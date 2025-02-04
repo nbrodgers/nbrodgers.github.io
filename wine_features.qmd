@@ -1,3 +1,13 @@
+---
+title: "Wine Features"
+author: "Nicole Rodgers"
+date: "02/03/2025"
+
+format: 
+  html:
+    embed-resources: true
+---
+
 **Author:**
 
 Nicole Rodgers
@@ -56,7 +66,7 @@ summary(wino_tr)
 m1 <- train(lprice ~ .,
   data = wino_tr,
   method = "lm",
-  trControl = trainControl(method = "repeatedcv", number = 5, repeats = 3)
+  trControl = trainControl(method = "boot", number = 100)
 )
 
 m1
@@ -73,7 +83,7 @@ do_training <- function(df, formula) {
   train(formula,
     data = df,
     method = "lm",
-    trControl = trainControl(method = "repeatedcv", number = 5, repeats = 3)
+    trControl = trainControl(method = "boot", number = 100)
   )
 }
 
