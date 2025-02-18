@@ -4,3 +4,4 @@
 <p>(HW #1) Wines of the PNW <a href = "wine_of_pnw.html">[HTML]</a> <a href = "wine_of_pnw.qmd">[QMD]</a>
 <p>(HW #2) Wine Features <a href = "wine_features.html">[HTML]</a> <a href = "wine_features.qmd">[QMD]</a>
 <p>(HW #3) KNN <a href = "knn.html">[HTML]</a> <a href = "knn.qmd">[QMD]</a>
+<p>(HW #4) Conditional Probability <a href = "cond.html">[HTML]</a> <a href = "cond.qmd">[QMD]</a>
