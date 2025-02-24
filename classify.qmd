@@ -1,0 +1,132 @@
+---
+title: "Classification"
+author: "Nicole Rodgers"
+date: "02/24/2025"
+
+format: 
+  html:
+    theme: minty  
+    mainfont: monospace
+    highlight-style: github
+    title-block-banner: true
+    embed-resources: true
+---
+
+**Abstract:**
+
+This is a technical blog post of **both** an HTML file *and* [.qmd file](https://raw.githubusercontent.com/cd-public/D505/refs/heads/master/hws/src/classify.qmd) hosted on GitHub pages.
+
+# 1. Setup
+
+**Step Up Code:**
+
+```{r}
+sh <- suppressPackageStartupMessages
+sh(library(tidyverse))
+sh(library(caret))
+sh(library(naivebayes))
+sh(library(tidytext))
+sh(library(SnowballC))
+sh(library(pROC))
+sh(library(glmnet))
+data(stop_words)
+wine <- readRDS(gzcon(url("https://github.com/cd-public/D505/raw/master/dat/pinot.rds")))
+names(wine)[names(wine) == 'id'] = 'id'
+```
+
+# 2. Logistic Concepts
+
+Why do we call it Logistic Regression even though we are using the technique for classification?
+
+> <span style="color:red;font-weight:bold">TODO</span>: This method does not Classify a wine by predicting a province, it gives us the Probabability that it comes from a particular province, which we can then plot against a 1:1 Regression.
+
+# 3. Modeling
+
+We train a logistic regression algorithm to classify a whether a wine comes from Marlborough using:
+
+1. An 80-20 train-test split.
+2. Three features engineered from the description
+3. 5-fold cross validation.
+
+We report Kappa after using the model to predict provinces in the holdout sample.
+
+```{r}
+# Feature engineering
+desc_to_words <- function(df, omits) { 
+  df %>%
+    unnest_tokens(word, description) %>%
+    anti_join(stop_words) %>% # get rid of stop words
+    filter(!(word %in% omits))
+}
+words <- desc_to_words(wine, c("wine","pinot","vineyard"))
+words_to_stems <- function(df) { 
+  df %>%
+    mutate(word = wordStem(word))
+}
+stems <- words_to_stems(words)
+filter_by_count <- function(df, j) { 
+  df %>%
+    count(id, word) %>% 
+    group_by(id) %>% mutate(exists = (n>0)) %>% ungroup %>% 
+    group_by(word) %>% 
+    mutate(total = sum(n)) %>% 
+    filter(total > j)
+}
+pivoter <- function(words, df) {
+  words %>%
+    pivot_wider(id_cols = id, names_from = word, values_from = exists, values_fill = list(exists=0)) %>% 
+    right_join(select(df,id,province)) %>% 
+    drop_na() %>% 
+    select(-id)
+}
+wine_words <- function(df, j, stem) { 
+  words <- desc_to_words(df, c("wine","pinot","vineyard"))
+  if (stem) {
+    words <- words_to_stems(words)
+  }
+  words <- filter_by_count(words, j)
+  pivoter(words, df)
+}
+wino <- wine_words(wine, 1000, F)
+wino <- wino %>% 
+  mutate(marl = factor(province=="Marlborough")) %>%
+  select(-province)
+
+# Regression
+wine_index <- createDataPartition(wino$marl, p = 0.80, list = FALSE)
+train <- wino[ wine_index, ]
+test <- wino[-wine_index, ]
+table(train$marl)
+control = trainControl(method = "cv", number = 5)
+get_fit <- function(df) {
+  train(marl ~ .,
+        data = df, 
+        trControl = control,
+        method = "glm",
+        family = "binomial",
+        maxit = 5)
+}
+fit <- get_fit(train)
+fit
+```
+
+
+# 4. Binary vs Other Classification
+
+What is the difference between determining some form of classification through logistic regression versus methods like $K$-NN and Naive Bayes which performed classifications.
+
+> <span style="color:red;font-weight:bold">TODO</span>: A Regression will give you the likelihood that the prediction is correct, which better allows you to analyze the accuracy of your model. A Classification will give you a definitive answer, which be could correct because of a good model or a lucky guess.
+
+
+# 5. ROC Curves
+
+We can display an ROC for the model to explain your model's quality.
+
+```{r}
+prob <- predict(fit, newdata = test, type = "prob")[,2]
+myRoc <- roc(test$marl, prob)
+plot(myRoc)
+auc(myRoc)
+```
+
+> <span style="color:red;font-weight:bold">TODO</span>: The AUC of >0.9 suggests high accuracy and an effective model.
