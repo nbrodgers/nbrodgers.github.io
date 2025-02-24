@@ -5,3 +5,4 @@
 <p>(HW #2) Wine Features <a href = "wine_features.html">[HTML]</a> <a href = "wine_features.qmd">[QMD]</a>
 <p>(HW #3) KNN <a href = "knn.html">[HTML]</a> <a href = "knn.qmd">[QMD]</a>
 <p>(HW #4) Conditional Probability <a href = "cond.html">[HTML]</a> <a href = "cond.qmd">[QMD]</a>
+<p>(HW #5) Classification <a href = "classify.html">[HTML]</a> <a href = "classify.qmd">[QMD]</a>
