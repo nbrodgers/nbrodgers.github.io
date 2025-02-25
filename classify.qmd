@@ -129,4 +129,4 @@ plot(myRoc)
 auc(myRoc)
 ```
 
-> <span style="color:red;font-weight:bold">TODO</span>: The AUC of >0.9 suggests high accuracy and an effective model.
+> <span style="color:red;font-weight:bold">TODO</span>: The AUC of >0.8 suggests high accuracy and an effective model.
